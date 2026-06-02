@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Card, evaluateHand } from "./game";
+import { Card, defaultAdminSettings, evaluateHand, progressiveContribution, shouldHitProgressive, shouldWinDouble } from "./game";
 
 function c(rank: Card["rank"], suit: Card["suit"]): Card {
   return { id: `${rank}-${suit}`, rank, suit };
@@ -35,5 +35,26 @@ describe("evaluateHand", () => {
     expect(evaluateHand([c("A", "cups"), c("2", "coins"), c("3", "wands"), c("4", "swords"), c("5", "cups")]).name).toBe(
       "Straight",
     );
+  });
+});
+
+describe("admin odds helpers", () => {
+  it("calculates progressive ante contribution from admin settings", () => {
+    expect(progressiveContribution(5, { ...defaultAdminSettings, progressiveContributionRate: 20 })).toBe(1);
+    expect(progressiveContribution(25, { ...defaultAdminSettings, progressiveContributionRate: 20 })).toBe(5);
+  });
+
+  it("only lets Jacks or Better trigger the progressive jackpot", () => {
+    const jacks = evaluateHand([c("J", "cups"), c("J", "coins"), c("5", "wands"), c("8", "swords"), c("A", "cups")]);
+    const twoPair = evaluateHand([c("J", "cups"), c("J", "coins"), c("5", "wands"), c("5", "swords"), c("A", "cups")]);
+
+    expect(shouldHitProgressive(jacks, { ...defaultAdminSettings, progressiveHitRate: 50 }, 0.49)).toBe(true);
+    expect(shouldHitProgressive(jacks, { ...defaultAdminSettings, progressiveHitRate: 50 }, 0.5)).toBe(false);
+    expect(shouldHitProgressive(twoPair, { ...defaultAdminSettings, progressiveHitRate: 100 }, 0)).toBe(false);
+  });
+
+  it("applies admin-controlled double-up odds", () => {
+    expect(shouldWinDouble({ ...defaultAdminSettings, doubleWinRate: 48 }, 0.47)).toBe(true);
+    expect(shouldWinDouble({ ...defaultAdminSettings, doubleWinRate: 48 }, 0.48)).toBe(false);
   });
 });
