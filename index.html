@@ -7,6 +7,48 @@
       name="description"
       content="An immersive tarot-themed video poker game with five-card draw play, holds, bets, and a Jacks-or-Better payout table."
     />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      .paytable-panel::after {
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.04) 50%, rgba(0, 0, 0, 0.2)), url("https://video-poker-tarot-theme-kt01pgfjj-sbui503s-projects.vercel.app/casino-main.jpg?v=20260602c") center top / cover no-repeat !important;
+      }
+
+      .double-host {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.04) 44%, rgba(0, 0, 0, 0.86)), url("https://video-poker-tarot-theme-kt01pgfjj-sbui503s-projects.vercel.app/double-host.jpg?v=20260602c") center 18% / cover no-repeat !important;
+      }
+    </style>
+    <script>
+      (() => {
+        const assetBase = "https://video-poker-tarot-theme-kt01pgfjj-sbui503s-projects.vercel.app";
+        const replacements = new Map([
+          ["/bonus-red-card.jpg", `${assetBase}/bonus-red-card.jpg?v=20260602c`],
+          ["/bonus-black-card.jpg", `${assetBase}/bonus-black-card.jpg?v=20260602c`],
+          ["/casino-main.jpg", `${assetBase}/casino-main.jpg?v=20260602c`],
+          ["/double-host.jpg", `${assetBase}/double-host.jpg?v=20260602c`],
+        ]);
+
+        const rewrite = (value) => {
+          if (!value) return "";
+          const url = new URL(value, window.location.href);
+          return replacements.get(url.pathname) || value;
+        };
+
+        const patchImages = () => {
+          document.querySelectorAll("img").forEach((img) => {
+            const next = rewrite(img.getAttribute("src") || img.src);
+            if (next && img.src !== next) img.src = next;
+          });
+        };
+
+        new MutationObserver(patchImages).observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["src"],
+        });
+        document.addEventListener("DOMContentLoaded", patchImages);
+      })();
+    </script>
     <title>Arcana Draw Video Poker</title>
   </head>
   <body>

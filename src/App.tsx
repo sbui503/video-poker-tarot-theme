@@ -53,10 +53,12 @@ const MAX_BET = 5;
 const emptyResult = { name: "No Win", multiplier: 0, solverName: "", solverDescription: "" } as const;
 const openingHand = Array.from({ length: 5 }, (_, index) => index);
 const coinColumns = [1, 2, 3, 4, 5];
+const appBaseUrl = (import.meta as ImportMeta & { env: { BASE_URL: string } }).env.BASE_URL;
+const appAsset = (path: string) => `${appBaseUrl}${path}`;
 
 const bonusChoiceMeta: Record<BonusChoice, { label: string; image: string }> = {
-  red: { label: "Red", image: "/bonus-red-card.jpg" },
-  black: { label: "Black", image: "/bonus-black-card.jpg" },
+  red: { label: "Red", image: appAsset("bonus-red-card.jpg?v=20260602b") },
+  black: { label: "Black", image: appAsset("bonus-black-card.jpg?v=20260602b") },
 };
 
 const standardSuitMeta: Record<Card["suit"], { label: string; symbol: string; color: BonusChoice }> = {

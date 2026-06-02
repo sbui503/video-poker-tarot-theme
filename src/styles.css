@@ -37,7 +37,7 @@ button {
 }
 
 .arcade-shell {
-  min-height: 100svh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 0;
@@ -50,12 +50,12 @@ button {
 .game-phone {
   position: relative;
   width: min(100vw, 430px);
-  min-height: 100svh;
+  min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding: 13px 14px 8px;
+  padding: 9px 14px max(8px, env(safe-area-inset-bottom));
   background:
     linear-gradient(180deg, rgba(2, 2, 2, 0.76), rgba(18, 3, 4, 0.76) 40%, rgba(3, 2, 2, 0.94)),
     radial-gradient(circle at 50% 4%, rgba(255, 215, 119, 0.16), transparent 22%);
@@ -106,11 +106,11 @@ button {
 }
 
 .top-bar {
-  min-height: 78px;
+  min-height: 64px;
   display: grid;
-  grid-template-columns: 52px minmax(96px, 1fr) minmax(158px, 1.12fr);
-  grid-template-rows: 42px 34px;
-  gap: 8px 10px;
+  grid-template-columns: 48px minmax(88px, 1fr) minmax(144px, 1.08fr);
+  grid-template-rows: 36px 28px;
+  gap: 6px 8px;
   align-items: center;
 }
 
@@ -130,8 +130,8 @@ button {
 }
 
 .round-icon {
-  width: 50px;
-  height: 50px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   border-radius: 14px;
@@ -141,12 +141,12 @@ button {
 .vip-pill,
 .wallet-pill,
 .language-pill {
-  min-height: 46px;
+  min-height: 39px;
   display: flex;
   align-items: center;
   gap: 9px;
   border-radius: 17px;
-  padding: 0 13px;
+  padding: 0 10px;
   text-transform: uppercase;
 }
 
@@ -158,13 +158,13 @@ button {
 
 .wallet-pill {
   justify-self: end;
-  min-width: 162px;
+  min-width: 146px;
   justify-content: space-between;
 }
 
 .wallet-pill button {
-  width: 34px;
-  height: 34px;
+  width: 31px;
+  height: 31px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -176,32 +176,34 @@ button {
   grid-column: 3;
   grid-row: 2;
   justify-self: end;
-  min-height: 34px;
+  min-height: 29px;
   border-radius: 16px;
   color: #fff4d2;
   text-transform: none;
 }
 
 .brand-stage {
-  min-height: 110px;
+  min-height: 82px;
   display: grid;
   justify-items: center;
   align-content: center;
-  margin-top: -12px;
+  margin-top: -13px;
   text-align: center;
   color: var(--gold-bright);
   text-shadow: 0 0 22px rgba(244, 198, 99, 0.62);
 }
 
 .brand-spade {
-  margin-bottom: -2px;
+  width: 38px;
+  height: 38px;
+  margin-bottom: -7px;
   filter: drop-shadow(0 0 12px rgba(244, 198, 99, 0.58));
 }
 
 .brand-stage h1 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(3.3rem, 14vw, 4.65rem);
+  font-size: clamp(2.8rem, 12vw, 3.7rem);
   line-height: 0.78;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -216,14 +218,14 @@ button {
 }
 
 .brand-stage p {
-  margin-top: 10px;
-  font-size: 0.85rem;
+  margin-top: 6px;
+  font-size: 0.72rem;
   font-weight: 800;
 }
 
 .brand-stage span {
-  margin-top: 8px;
-  font-size: 0.75rem;
+  margin-top: 5px;
+  font-size: 0.65rem;
   letter-spacing: 0.16em;
 }
 
@@ -315,30 +317,35 @@ button {
 }
 
 .paytable-stage {
-  min-height: 226px;
+  position: relative;
+  min-height: 208px;
   display: grid;
   align-items: end;
-  margin-top: -8px;
+  margin-top: -5px;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .paytable-host {
   position: absolute;
-  top: -10px;
-  right: -18px;
-  width: 44%;
-  height: 104%;
+  top: -16px;
+  right: 0;
+  bottom: -8px;
+  z-index: 1;
+  width: 34%;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.18)),
-    url("/casino-main.jpg") 80% 39% / 205% auto no-repeat;
+    linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.04) 50%, rgba(0, 0, 0, 0.2)),
+    url("/casino-main.jpg?v=20260602b") center top / cover no-repeat;
   border-radius: 8px;
-  opacity: 0.94;
-  filter: saturate(1.08) contrast(1.04);
+  opacity: 1;
+  filter: saturate(1.12) contrast(1.05);
 }
 
 .paytable-frame {
   position: relative;
-  width: 81%;
-  padding: 8px;
+  z-index: 2;
+  width: 72%;
+  padding: 6px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
@@ -351,7 +358,7 @@ button {
 
 .paytable-grid {
   display: grid;
-  grid-template-columns: minmax(112px, 1.38fr) repeat(5, minmax(34px, 0.62fr));
+  grid-template-columns: minmax(96px, 1.28fr) repeat(5, minmax(29px, 0.6fr));
   border: 1px solid rgba(244, 198, 99, 0.34);
   background: rgba(0, 0, 0, 0.38);
 }
@@ -359,13 +366,13 @@ button {
 .pay-head,
 .pay-row > span,
 .pay-row > strong {
-  min-height: 22px;
+  min-height: 20px;
   display: grid;
   align-items: center;
-  padding: 4px 5px;
+  padding: 3px 4px;
   border-right: 1px solid rgba(244, 198, 99, 0.22);
   border-bottom: 1px solid rgba(244, 198, 99, 0.22);
-  font-size: 0.63rem;
+  font-size: 0.58rem;
   line-height: 1;
 }
 
@@ -413,13 +420,13 @@ button {
 }
 
 .progressive-ribbon {
-  min-height: 44px;
+  min-height: 30px;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 2px 10px;
   align-items: center;
-  margin: 7px 0;
-  padding: 7px 12px;
+  margin: 4px 0;
+  padding: 4px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
@@ -437,12 +444,12 @@ button {
 
 .progressive-ribbon strong {
   color: var(--gold-bright);
-  font-size: 1.22rem;
+  font-size: 0.96rem;
   text-shadow: 0 0 13px rgba(244, 198, 99, 0.5);
 }
 
 .progressive-ribbon small {
-  grid-column: 1 / -1;
+  display: none;
 }
 
 .progressive-ribbon.is-hit {
@@ -451,7 +458,7 @@ button {
 
 .hand-table {
   margin-top: 2px;
-  padding: 8px 10px 10px;
+  padding: 6px 10px 8px;
   border: 2px solid var(--line);
   border-radius: 8px;
   background:
@@ -465,12 +472,12 @@ button {
 .hold-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 5px;
+  margin-bottom: 6px;
 }
 
 .hold-row button {
-  min-height: 32px;
+  min-height: 30px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--gold-bright);
@@ -493,7 +500,7 @@ button {
 .card-row {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 
 .playing-card {
@@ -606,13 +613,13 @@ button {
 .score-panel {
   display: grid;
   grid-template-columns: 1fr 0.95fr 1fr;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 7px;
+  margin-top: 7px;
 }
 
 .score-panel > div,
 .double-score > div {
-  min-height: 68px;
+  min-height: 58px;
   display: grid;
   align-content: center;
   justify-items: center;
@@ -634,7 +641,7 @@ button {
 .score-panel strong,
 .double-score strong {
   color: #ffe7a4;
-  font-size: clamp(1.36rem, 8vw, 2.3rem);
+  font-size: clamp(1.24rem, 7vw, 2rem);
   line-height: 1.06;
 }
 
@@ -667,14 +674,14 @@ button {
 .action-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1.45fr;
-  gap: 9px;
-  margin-top: 9px;
+  gap: 7px;
+  margin-top: 7px;
 }
 
 .flat-action,
 .deal-action,
 .collect-action {
-  min-height: 56px;
+  min-height: 50px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--gold-bright);
@@ -704,13 +711,13 @@ button {
 }
 
 .table-footer {
-  min-height: 34px;
+  min-height: 28px;
   display: grid;
   grid-template-columns: 1fr auto auto;
   gap: 8px;
   align-items: center;
-  margin-top: 8px;
-  padding: 0 5px 10px;
+  margin-top: 6px;
+  padding: 0 5px 6px;
   color: var(--text-soft);
   text-transform: uppercase;
   font-size: 0.68rem;
@@ -729,9 +736,9 @@ button:disabled {
 .double-stage {
   flex: 1;
   display: grid;
-  grid-template-rows: minmax(200px, 0.8fr) auto;
-  min-height: calc(100svh - 154px);
-  margin-top: -6px;
+  grid-template-rows: minmax(315px, 0.94fr) auto;
+  min-height: calc(100dvh - 86px);
+  margin-top: -10px;
 }
 
 .is-double-mode .brand-stage {
@@ -739,20 +746,20 @@ button:disabled {
 }
 
 .double-host {
-  min-height: 218px;
+  min-height: clamp(315px, 47svh, 440px);
   margin-inline: -14px;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2) 58%, rgba(0, 0, 0, 0.88)),
-    url("/double-host.jpg") center 35% / cover no-repeat;
+    linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.04) 44%, rgba(0, 0, 0, 0.86)),
+    url("/double-host.jpg?v=20260602b") center 18% / cover no-repeat;
 }
 
 .double-cabinet {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 9px;
-  margin-top: -46px;
-  padding: 17px 16px 12px;
+  gap: 8px;
+  margin-top: -96px;
+  padding: 15px 16px 12px;
   border: 2px solid var(--line);
   border-radius: 8px;
   background:
@@ -766,7 +773,7 @@ button:disabled {
 .double-cabinet h2 {
   margin: 0;
   color: var(--gold-bright);
-  font-size: clamp(1.95rem, 9vw, 2.7rem);
+  font-size: clamp(2.05rem, 9vw, 2.85rem);
   line-height: 0.95;
   text-transform: uppercase;
   text-shadow:
@@ -793,7 +800,7 @@ button:disabled {
 
 .current-win strong {
   color: var(--green);
-  font-size: clamp(1.95rem, 10vw, 2.9rem);
+  font-size: clamp(2rem, 10vw, 3rem);
   line-height: 1;
   text-shadow: 0 0 16px rgba(31, 212, 94, 0.54);
 }
@@ -804,12 +811,12 @@ button:disabled {
 }
 
 .bonus-card-slot {
-  width: min(26vw, 108px);
-  min-width: 90px;
+  width: min(39vw, 154px);
+  min-width: 124px;
   aspect-ratio: 0.68;
   display: grid;
   place-items: center;
-  padding: 6px;
+  padding: 8px;
   border: 2px solid #ffdc84;
   border-radius: 8px;
   background: rgba(250, 213, 123, 0.14);
@@ -823,7 +830,7 @@ button:disabled {
   height: 100%;
   display: block;
   object-fit: cover;
-  object-position: center;
+  object-position: center top;
   border-radius: 6px;
 }
 
@@ -849,7 +856,7 @@ button:disabled {
 }
 
 .double-picks button {
-  min-height: 56px;
+  min-height: 54px;
   display: inline-grid;
   grid-auto-flow: column;
   place-items: center;
@@ -874,7 +881,7 @@ button:disabled {
 
 .collect-action {
   width: 100%;
-  min-height: 44px;
+  min-height: 38px;
   color: #fff0b3;
   background: rgba(255, 255, 255, 0.06);
 }
@@ -973,12 +980,12 @@ button:disabled {
 
 @media (max-height: 780px) {
   .game-phone {
-    padding-top: 10px;
+    padding-top: 8px;
   }
 
   .top-bar {
-    min-height: 70px;
-    grid-template-rows: 38px 30px;
+    min-height: 62px;
+    grid-template-rows: 35px 27px;
   }
 
   .round-icon {
@@ -988,16 +995,16 @@ button:disabled {
 
   .vip-pill,
   .wallet-pill {
-    min-height: 40px;
+    min-height: 38px;
   }
 
   .language-pill {
-    min-height: 30px;
+    min-height: 28px;
   }
 
   .brand-stage {
-    min-height: 84px;
-    margin-top: -16px;
+    min-height: 74px;
+    margin-top: -18px;
   }
 
   .brand-spade {
@@ -1007,7 +1014,7 @@ button:disabled {
   }
 
   .brand-stage h1 {
-    font-size: clamp(2.6rem, 11vw, 3.4rem);
+    font-size: clamp(2.42rem, 10.5vw, 3.22rem);
   }
 
   .brand-stage p {
@@ -1020,7 +1027,7 @@ button:disabled {
   }
 
   .paytable-stage {
-    min-height: 198px;
+    min-height: 194px;
   }
 
   .paytable-frame {
@@ -1030,19 +1037,19 @@ button:disabled {
   .pay-head,
   .pay-row > span,
   .pay-row > strong {
-    min-height: 19px;
-    padding-block: 3px;
-    font-size: 0.58rem;
+    min-height: 18px;
+    padding-block: 2px;
+    font-size: 0.56rem;
   }
 
   .progressive-ribbon {
-    min-height: 40px;
-    margin: 6px 0;
-    padding-block: 6px;
+    min-height: 28px;
+    margin: 3px 0;
+    padding-block: 3px;
   }
 
   .progressive-ribbon strong {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
   }
 
   .progressive-ribbon small {
@@ -1066,7 +1073,7 @@ button:disabled {
   }
 
   .score-panel {
-    margin-top: 8px;
+    margin-top: 6px;
   }
 
   .flat-action,
@@ -1075,12 +1082,68 @@ button:disabled {
   }
 
   .action-row {
-    margin-top: 8px;
+    margin-top: 6px;
   }
 
   .table-footer {
     min-height: 28px;
     padding-bottom: 6px;
+  }
+
+  .double-stage {
+    grid-template-rows: 176px auto;
+    min-height: calc(100dvh - 78px);
+    margin-top: -4px;
+  }
+
+  .double-host {
+    min-height: 176px;
+    background-position: center 17%;
+  }
+
+  .double-cabinet {
+    gap: 6px;
+    margin-top: -28px;
+    padding: 12px 16px 8px;
+  }
+
+  .double-cabinet h2 {
+    font-size: clamp(1.75rem, 7.8vw, 2.2rem);
+  }
+
+  .current-win strong {
+    font-size: clamp(1.8rem, 8.6vw, 2.35rem);
+  }
+
+  .current-win small {
+    min-height: 15px;
+    font-size: 0.63rem;
+  }
+
+  .bonus-card-slot {
+    width: min(34vw, 134px);
+    min-width: 118px;
+    padding: 6px;
+  }
+
+  .double-picks {
+    gap: 9px;
+  }
+
+  .double-picks button {
+    min-height: 48px;
+  }
+
+  .collect-action {
+    min-height: 38px;
+  }
+
+  .double-score > div {
+    min-height: 42px;
+  }
+
+  .double-score strong {
+    font-size: 1rem;
   }
 }
 
@@ -1095,8 +1158,8 @@ button:disabled {
   }
 
   .round-icon {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
   }
 
   .vip-pill,
@@ -1109,7 +1172,8 @@ button:disabled {
   }
 
   .brand-stage {
-    min-height: 122px;
+    min-height: 78px;
+    margin-top: -14px;
   }
 
   .brand-stage p {
@@ -1117,28 +1181,28 @@ button:disabled {
   }
 
   .paytable-stage {
-    min-height: 226px;
+    min-height: 198px;
   }
 
   .paytable-frame {
-    width: 83%;
+    width: 74%;
     padding: 6px;
   }
 
   .paytable-grid {
-    grid-template-columns: minmax(96px, 1.35fr) repeat(5, minmax(28px, 0.58fr));
+    grid-template-columns: minmax(88px, 1.28fr) repeat(5, minmax(25px, 0.58fr));
   }
 
   .pay-head,
   .pay-row > span,
   .pay-row > strong {
-    min-height: 22px;
+    min-height: 19px;
     padding-inline: 3px;
-    font-size: 0.6rem;
+    font-size: 0.56rem;
   }
 
   .hold-row button {
-    min-height: 31px;
+    min-height: 29px;
     font-size: 0.72rem;
   }
 
@@ -1147,7 +1211,7 @@ button:disabled {
   }
 
   .score-panel > div {
-    min-height: 66px;
+    min-height: 56px;
   }
 
   .action-row {
@@ -1156,6 +1220,6 @@ button:disabled {
 
   .flat-action,
   .deal-action {
-    min-height: 56px;
+    min-height: 48px;
   }
 }
