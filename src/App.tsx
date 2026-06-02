@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import {
-  BadgeDollarSign,
-  ChevronDown,
-  ChevronUp,
-  Hand,
+  CircleDollarSign,
+  Crown,
+  Globe2,
+  Heart,
+  Menu,
+  Minus,
   Play,
+  Plus,
   RefreshCcw,
   Settings,
-  Sparkles,
-  Trophy,
+  Spade,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -22,18 +24,17 @@ import {
   defaultAdminSettings,
   evaluateHand,
   formatCard,
-  oracleFocuses,
   payoutTable,
   progressiveContribution,
   replaceCards,
   shouldHitProgressive,
   shouldWinDouble,
   shuffleDeck,
-  tarotSuitMeta,
 } from "./game";
 
 type Phase = "ready" | "deal" | "double" | "settled";
 type SoundKind = "deal" | "hold" | "win" | "lose" | "double";
+type BonusChoice = "red" | "black";
 
 type HandSlot = {
   card: Card;
@@ -41,7 +42,8 @@ type HandSlot = {
 };
 
 type DoubleOutcome = {
-  focusId: string;
+  choice: BonusChoice;
+  revealed: BonusChoice;
   won: boolean;
   stake: number;
 };
@@ -50,6 +52,19 @@ const STARTING_CREDITS = 500;
 const MAX_BET = 5;
 const emptyResult = { name: "No Win", multiplier: 0, solverName: "", solverDescription: "" } as const;
 const openingHand = Array.from({ length: 5 }, (_, index) => index);
+const coinColumns = [1, 2, 3, 4, 5];
+
+const bonusChoiceMeta: Record<BonusChoice, { label: string; image: string }> = {
+  red: { label: "Red", image: "/bonus-red-card.jpg" },
+  black: { label: "Black", image: "/bonus-black-card.jpg" },
+};
+
+const standardSuitMeta: Record<Card["suit"], { label: string; symbol: string; color: BonusChoice }> = {
+  cups: { label: "Hearts", symbol: "♥", color: "red" },
+  coins: { label: "Diamonds", symbol: "♦", color: "red" },
+  wands: { label: "Clubs", symbol: "♣", color: "black" },
+  swords: { label: "Spades", symbol: "♠", color: "black" },
+};
 
 const settingLimits: Record<keyof AdminSettings, { min: number; max: number; step: number; suffix: string }> = {
   doubleWinRate: { min: 1, max: 99, step: 1, suffix: "%" },
@@ -100,6 +115,14 @@ function clamp(value: number, key: keyof AdminSettings) {
   return Math.min(limit.max, Math.max(limit.min, value));
 }
 
+function money(value: number) {
+  return value.toFixed(2);
+}
+
+function oppositeChoice(choice: BonusChoice): BonusChoice {
+  return choice === "red" ? "black" : "red";
+}
+
 export default function App() {
   const [credits, setCredits] = useState(STARTING_CREDITS);
   const [bet, setBet] = useState(5);
@@ -129,14 +152,16 @@ export default function App() {
   const activeCards = hand.filter((slot): slot is HandSlot => slot !== null).map((slot) => slot.card);
   const cardsLeft = deck.length;
   const nextContribution = progressiveContribution(Math.max(1, wager || bet), settings);
+  const visibleDouble = phase === "double" || doubleOutcome !== null;
+  const displayWin = pendingWin || lastWin;
 
   const tableRows = useMemo(
     () =>
       payoutTable.map((entry) => ({
         ...entry,
-        value: entry.multiplier * bet,
+        values: coinColumns.map((coins) => entry.multiplier * coins),
       })),
-    [bet],
+    [],
   );
 
   useEffect(() => {
@@ -174,7 +199,7 @@ export default function App() {
     setLastWin(0);
     clearRoundState();
     setPhase("deal");
-    setMessage("Choose your omens.");
+    setMessage("Choose your holds.");
     playSound("deal");
   }
 
@@ -204,14 +229,14 @@ export default function App() {
       setDoubleOutcome(null);
       setFlashWin(true);
       setPhase("double");
-      setMessage(hitProgressive ? `${outcome.name} opened the progressive: ${jackpotAward}.` : `${outcome.name}. Collect or ask the oracle to double.`);
+      setMessage(hitProgressive ? `${outcome.name} opened the progressive: ${jackpotAward}.` : `${outcome.name}.`);
       playSound("win");
     } else {
       setPendingWin(0);
       setDoubleOutcome(null);
       setStreak(0);
       setPhase("settled");
-      setMessage("No winning omen in this spread.");
+      setMessage("No winning hand.");
       playSound("lose");
     }
   }
@@ -233,11 +258,12 @@ export default function App() {
     playSound("hold");
   }
 
-  function doubleUp(focusId: string) {
+  function doubleUp(choice: BonusChoice) {
     if (!canDouble) return;
     const stake = pendingWin;
     const won = shouldWinDouble(settings);
-    setDoubleOutcome({ focusId, won, stake });
+    const revealed = won ? choice : oppositeChoice(choice);
+    setDoubleOutcome({ choice, revealed, won, stake });
 
     if (won) {
       const doubled = stake * 2;
@@ -246,14 +272,14 @@ export default function App() {
       setLastWin(doubled);
       setDoubleRounds(nextRound);
       setFlashWin(true);
-      setMessage(nextRound >= settings.maxDoubleRounds ? `The oracle doubled you to ${doubled}. Max double reached.` : `The oracle doubled you to ${doubled}.`);
+      setMessage(nextRound >= settings.maxDoubleRounds ? `Double win: ${doubled}. Max double reached.` : `Double win: ${doubled}.`);
       playSound("double");
     } else {
       setPendingWin(0);
       setLastWin(0);
       setStreak(0);
       setPhase("settled");
-      setMessage("The oracle kept the stake.");
+      setMessage("Double lost.");
       playSound("lose");
     }
   }
@@ -299,147 +325,152 @@ export default function App() {
   }
 
   return (
-    <main className="arcade-shell">
-      <section className="game-surface" aria-label="Arcana Draw video poker table">
-        <div className="hud-bar">
-          <div className="brand-lockup">
-            <span className="brand-mark" aria-hidden="true">
-              A
-            </span>
-            <div>
-              <p>Arcana Draw</p>
-              <h1>Tarot Video Poker</h1>
-            </div>
+    <main className={`arcade-shell ${visibleDouble ? "is-double-mode" : ""}`}>
+      <section className="game-phone" aria-label="HNIRT tarot video poker">
+        <div className="top-bar">
+          <button className="round-icon" type="button" onClick={() => setAdminOpen((value) => !value)} aria-label={adminOpen ? "Close admin panel" : "Open admin panel"}>
+            <Menu size={23} />
+          </button>
+          <div className="vip-pill">
+            <Crown size={22} aria-hidden="true" />
+            <strong>VIP 3</strong>
           </div>
-
-          <div className="score-strip" aria-label="Game score">
-            <div>
-              <span>Credits</span>
-              <strong>{credits}</strong>
-            </div>
-            <div>
-              <span>Bet</span>
-              <strong>{bet}</strong>
-            </div>
-            <div>
-              <span>{pendingWin > 0 ? "Pending" : "Win"}</span>
-              <strong className={lastWin > 0 ? "win-text" : ""}>{pendingWin || lastWin}</strong>
-            </div>
-            <div className="progressive-chip">
-              <span>Progressive</span>
-              <strong>{progressive}</strong>
-            </div>
+          <div className="wallet-pill">
+            <CircleDollarSign size={23} aria-hidden="true" />
+            <strong>{money(credits)}</strong>
+            <button type="button" onClick={resetGame} aria-label="Reset game credits">
+              <Plus size={22} />
+            </button>
           </div>
-
-          <div className="hud-actions">
-            <button className="icon-button" type="button" onClick={() => setAdminOpen((value) => !value)} aria-label={adminOpen ? "Close admin panel" : "Open admin panel"}>
-              <Settings size={20} />
-            </button>
-            <button className="icon-button" type="button" onClick={() => setSound((value) => !value)} aria-label={sound ? "Mute sound" : "Enable sound"}>
-              {sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
-            </button>
+          <div className="language-pill">
+            <Globe2 size={19} aria-hidden="true" />
+            <span>English</span>
           </div>
         </div>
 
-        <div className="table-layout">
-          <section className="felt-panel" aria-label="Current hand">
-            <div className="dealer-rail">
-              <div>
-                <span className="kicker">Current omen</span>
-                <p>{message}</p>
-              </div>
-              <div className="deck-meter" aria-label={`${cardsLeft} cards remain in deck`}>
-                <span>{cardsLeft}</span>
-                <small>deck</small>
-              </div>
-            </div>
+        <header className="brand-stage">
+          <Spade className="brand-spade" size={50} fill="currentColor" aria-hidden="true" />
+          <h1>HNIRT</h1>
+          <p>Entertainment</p>
+          <span>Play Together • Win Together</span>
+        </header>
 
-            <div className={`card-row ${flashWin ? "is-winning" : ""}`}>
-              {hand.map((slot, index) => (
-                <TarotCard key={slot?.card.id ?? index} slot={slot} held={held[index]} index={index} onToggle={() => toggleHold(index)} disabled={phase !== "deal"} />
-              ))}
-            </div>
+        {adminOpen && (
+          <AdminPanel
+            settings={settings}
+            sound={sound}
+            onChange={updateSetting}
+            onResetJackpot={() => setProgressive(settings.progressiveSeed)}
+            onResetGame={resetGame}
+            onToggleSound={() => setSound((value) => !value)}
+          />
+        )}
 
-            {(phase === "double" || doubleOutcome) && (
-              <DoubleUpPanel pendingWin={pendingWin} doubleRounds={doubleRounds} settings={settings} outcome={doubleOutcome} canDouble={canDouble} onPick={doubleUp} onCollect={collectWin} />
-            )}
-
-            <div className="control-dock">
-              <div className="bet-control" aria-label="Bet controls">
-                <button type="button" onClick={() => changeBet(-1)} disabled={!canDeal || bet <= 1} aria-label="Decrease bet">
-                  <ChevronDown size={18} />
-                </button>
-                <span>{bet}</span>
-                <button type="button" onClick={() => changeBet(1)} disabled={!canDeal || bet >= MAX_BET} aria-label="Increase bet">
-                  <ChevronUp size={18} />
-                </button>
-              </div>
-
-              <button className="primary-action" type="button" onClick={() => (phase === "double" ? collectWin() : canDraw ? draw() : deal())} disabled={phase === "double" ? pendingWin <= 0 : canDeal && wager <= 0}>
-                {phase === "double" ? <Trophy size={20} /> : canDraw ? <Sparkles size={20} /> : <Play size={20} />}
-                <span>{phase === "double" ? "Collect" : canDraw ? "Draw" : "Deal"}</span>
-              </button>
-
-              <button className="secondary-action" type="button" onClick={maxBetDeal} disabled={!canDeal || credits <= 0}>
-                <BadgeDollarSign size={19} />
-                <span>Max Bet</span>
-              </button>
-
-              <button className="icon-button" type="button" onClick={resetGame} aria-label="Reset game">
-                <RefreshCcw size={20} />
-              </button>
-            </div>
-          </section>
-
-          <aside className="side-panel" aria-label="Payouts and table state">
-            <section className="result-panel">
-              <span className="kicker">Reading</span>
-              <h2>{result.name}</h2>
-              <p>{pendingWin > 0 ? `Pending win: ${pendingWin}` : result.multiplier > 0 ? `${result.multiplier}x pays ${result.multiplier * bet}` : "The next spread waits."}</p>
-              <div className="streak-bar">
-                <span>Streak</span>
-                <strong>{streak}</strong>
+        {visibleDouble ? (
+          <DoubleUpPanel
+            pendingWin={pendingWin}
+            doubleRounds={doubleRounds}
+            settings={settings}
+            outcome={doubleOutcome}
+            canDouble={canDouble}
+            credits={credits}
+            bet={bet}
+            lastWin={lastWin}
+            onPick={doubleUp}
+            onCollect={collectWin}
+            onDeal={() => deal()}
+          />
+        ) : (
+          <>
+            <section className="paytable-stage" aria-label="Payouts">
+              <div className="paytable-host" aria-hidden="true" />
+              <div className="paytable-frame">
+                <div className="paytable-grid" style={{ "--active-bet": bet } as CSSProperties}>
+                  <span className="pay-head pay-name">Payouts</span>
+                  {coinColumns.map((coin) => (
+                    <span key={coin} className={`pay-head pay-coin ${coin === bet ? "is-active" : ""}`}>
+                      {coin} Coin
+                    </span>
+                  ))}
+                  {tableRows.map((row) => (
+                    <div key={row.name} className={`pay-row ${row.name === result.name ? "is-result" : ""}`}>
+                      <span>{row.name}</span>
+                      {row.values.map((value, index) => (
+                        <strong key={coinColumns[index]} className={coinColumns[index] === bet ? "is-active" : ""}>
+                          {value}
+                        </strong>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
 
-            <section className={`progressive-panel ${progressiveHit ? "is-hit" : ""}`}>
-              <span className="kicker">Jacks or Better</span>
-              <h2>{progressive}</h2>
-              <div className="progressive-grid">
-                <span>Hit</span>
-                <strong>{settings.progressiveHitRate}%</strong>
-                <span>Next ante</span>
-                <strong>{nextContribution}</strong>
-              </div>
-            </section>
+            <div className={`progressive-ribbon ${progressiveHit ? "is-hit" : ""}`}>
+              <span>Jacks or Better Progressive</span>
+              <strong>{money(progressive)}</strong>
+              <small>+{nextContribution} next ante</small>
+            </div>
 
-            <section className="paytable-panel">
-              <div className="panel-heading">
-                <Hand size={18} />
-                <h2>Paytable</h2>
+            <section className="hand-table" aria-label="Current hand">
+              <div className="hold-row">
+                {openingHand.map((index) => (
+                  <button key={index} type="button" onClick={() => toggleHold(index)} disabled={phase !== "deal"} className={held[index] ? "is-held" : ""}>
+                    Hold
+                  </button>
+                ))}
               </div>
-              <div className="paytable-list">
-                {tableRows.map((row) => (
-                  <div key={row.name} className={row.name === result.name ? "active" : ""}>
-                    <span>{row.name}</span>
-                    <strong>{row.name === "Jacks or Better" ? `${row.value}+` : row.value}</strong>
-                  </div>
+
+              <div className={`card-row ${flashWin ? "is-winning" : ""}`}>
+                {hand.map((slot, index) => (
+                  <PlayingCard key={slot?.card.id ?? index} slot={slot} held={held[index]} index={index} onToggle={() => toggleHold(index)} disabled={phase !== "deal"} />
                 ))}
               </div>
             </section>
 
-            <section className="suit-panel">
-              {Object.entries(tarotSuitMeta).map(([suit, meta]) => (
-                <div key={suit} style={{ "--suit-color": meta.accent } as CSSProperties}>
-                  <span>{meta.symbol}</span>
-                  <p>{meta.title}</p>
+            <section className="score-panel" aria-label="Game score">
+              <div>
+                <span>Credits</span>
+                <strong>{money(credits)}</strong>
+              </div>
+              <div>
+                <span>Bet</span>
+                <div className="bet-stepper">
+                  <button type="button" onClick={() => changeBet(-1)} disabled={!canDeal || bet <= 1} aria-label="Decrease bet">
+                    <Minus size={18} />
+                  </button>
+                  <strong>{bet}</strong>
+                  <button type="button" onClick={() => changeBet(1)} disabled={!canDeal || bet >= MAX_BET} aria-label="Increase bet">
+                    <Plus size={18} />
+                  </button>
                 </div>
-              ))}
+              </div>
+              <div>
+                <span>Win</span>
+                <strong className={displayWin > 0 ? "win-text" : ""}>{money(displayWin)}</strong>
+              </div>
             </section>
 
-            {adminOpen && <AdminPanel settings={settings} onChange={updateSetting} onResetJackpot={() => setProgressive(settings.progressiveSeed)} />}
-          </aside>
-        </div>
+            <section className="action-row" aria-label="Game actions">
+              <button type="button" className="flat-action" onClick={() => setBet(1)} disabled={!canDeal}>
+                Bet 1
+              </button>
+              <button type="button" className="flat-action" onClick={maxBetDeal} disabled={!canDeal || credits <= 0}>
+                Bet Max
+              </button>
+              <button className="deal-action" type="button" onClick={() => (canDraw ? draw() : deal())} disabled={canDeal && wager <= 0}>
+                <Play size={22} fill="currentColor" aria-hidden="true" />
+                <span>{canDraw ? "Draw" : "Deal"}</span>
+              </button>
+            </section>
+
+            <footer className="table-footer">
+              <span>{message}</span>
+              <strong>{result.name}</strong>
+              <small>{streak} streak / {cardsLeft} cards</small>
+            </footer>
+          </>
+        )}
       </section>
 
       {flashWin && <WinBurst />}
@@ -453,44 +484,70 @@ type DoubleUpPanelProps = {
   settings: AdminSettings;
   outcome: DoubleOutcome | null;
   canDouble: boolean;
-  onPick: (focusId: string) => void;
+  credits: number;
+  bet: number;
+  lastWin: number;
+  onPick: (choice: BonusChoice) => void;
   onCollect: () => void;
+  onDeal: () => void;
 };
 
-function DoubleUpPanel({ pendingWin, doubleRounds, settings, outcome, canDouble, onPick, onCollect }: DoubleUpPanelProps) {
-  const selectedFocus = outcome ? oracleFocuses.find((focus) => focus.id === outcome.focusId) : undefined;
+function DoubleUpPanel({ pendingWin, doubleRounds, settings, outcome, canDouble, credits, bet, lastWin, onPick, onCollect, onDeal }: DoubleUpPanelProps) {
+  const currentValue = pendingWin || outcome?.stake || lastWin;
+  const revealedMeta = outcome ? bonusChoiceMeta[outcome.revealed] : null;
+  const status = outcome ? (outcome.won ? `Winner: ${bonusChoiceMeta[outcome.choice].label}` : `Dealer drew ${bonusChoiceMeta[outcome.revealed].label}`) : `Round ${doubleRounds + 1} of ${settings.maxDoubleRounds}`;
 
   return (
-    <section className={`double-panel ${outcome?.won ? "is-blessed" : outcome ? "is-lost" : ""}`} aria-label="Double up mini game">
-      <div className="double-center">
-        <span className="kicker">Double Up</span>
-        <h2>{pendingWin > 0 ? pendingWin : outcome?.stake ?? 0}</h2>
-        <p>{outcome ? `${selectedFocus?.title ?? "Oracle"} ${outcome.won ? "doubled the win" : "closed the path"}.` : `Round ${doubleRounds + 1} of ${settings.maxDoubleRounds}`}</p>
-      </div>
+    <section className={`double-stage ${outcome?.won ? "is-win" : outcome ? "is-loss" : ""}`} aria-label="Double up bonus game">
+      <div className="double-host" aria-hidden="true" />
 
-      <div className="focus-wheel">
-        {oracleFocuses.map((focus) => (
-          <button
-            key={focus.id}
-            className={outcome?.focusId === focus.id ? "selected" : ""}
-            style={{ "--focus-color": focus.accent } as CSSProperties}
-            type="button"
-            onClick={() => onPick(focus.id)}
-            disabled={!canDouble}
-            aria-label={`Double up with ${focus.title}`}
-          >
-            <span>{focus.symbol}</span>
-            <strong>{focus.title}</strong>
+      <div className="double-cabinet">
+        <h2>Double Up?</h2>
+        <div className="current-win">
+          <span>Current Win</span>
+          <strong>{money(currentValue)}</strong>
+          <small>{status}</small>
+        </div>
+
+        <div className="bonus-card-slot" aria-live="polite">
+          {revealedMeta ? (
+            <img src={revealedMeta.image} alt={`${revealedMeta.label} bonus card`} />
+          ) : (
+            <div className="bonus-card-back" aria-label="Hidden bonus card">
+              <Spade size={62} fill="currentColor" aria-hidden="true" />
+            </div>
+          )}
+        </div>
+
+        <div className="double-picks">
+          <button className="red-pick" type="button" onClick={() => onPick("red")} disabled={!canDouble} aria-label="Pick red">
+            <Heart size={31} aria-hidden="true" />
+            <span>Red</span>
           </button>
-        ))}
-      </div>
+          <button className="black-pick" type="button" onClick={() => onPick("black")} disabled={!canDouble} aria-label="Pick black">
+            <Spade size={31} aria-hidden="true" />
+            <span>Black</span>
+          </button>
+        </div>
 
-      <div className="double-actions">
-        <button className="secondary-action" type="button" onClick={onCollect} disabled={pendingWin <= 0}>
-          <BadgeDollarSign size={18} />
-          <span>Collect</span>
+        <button className="collect-action" type="button" onClick={pendingWin > 0 ? onCollect : onDeal}>
+          {pendingWin > 0 ? "Collect" : "Deal Again"}
         </button>
-        <small>{settings.doubleWinRate}% double odds</small>
+
+        <div className="double-score" aria-label="Double game score">
+          <div>
+            <span>Credits</span>
+            <strong>{money(credits)}</strong>
+          </div>
+          <div>
+            <span>Bet</span>
+            <strong>{bet}</strong>
+          </div>
+          <div>
+            <span>Win</span>
+            <strong>{money(pendingWin || lastWin)}</strong>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -498,11 +555,14 @@ function DoubleUpPanel({ pendingWin, doubleRounds, settings, outcome, canDouble,
 
 type AdminPanelProps = {
   settings: AdminSettings;
+  sound: boolean;
   onChange: (key: keyof AdminSettings, value: number) => void;
   onResetJackpot: () => void;
+  onResetGame: () => void;
+  onToggleSound: () => void;
 };
 
-function AdminPanel({ settings, onChange, onResetJackpot }: AdminPanelProps) {
+function AdminPanel({ settings, sound, onChange, onResetJackpot, onResetGame, onToggleSound }: AdminPanelProps) {
   return (
     <section className="admin-panel" aria-label="Admin odds panel">
       <div className="panel-heading">
@@ -514,10 +574,20 @@ function AdminPanel({ settings, onChange, onResetJackpot }: AdminPanelProps) {
       <AdminControl label="Jackpot seed" settingKey="progressiveSeed" value={settings.progressiveSeed} onChange={onChange} />
       <AdminControl label="Ante to jackpot" settingKey="progressiveContributionRate" value={settings.progressiveContributionRate} onChange={onChange} />
       <AdminControl label="Max doubles" settingKey="maxDoubleRounds" value={settings.maxDoubleRounds} onChange={onChange} />
-      <button className="secondary-action admin-reset" type="button" onClick={onResetJackpot}>
-        <RefreshCcw size={17} />
-        <span>Reset Jackpot</span>
-      </button>
+      <div className="admin-actions">
+        <button type="button" onClick={onToggleSound}>
+          {sound ? <Volume2 size={17} /> : <VolumeX size={17} />}
+          <span>{sound ? "Sound On" : "Sound Off"}</span>
+        </button>
+        <button type="button" onClick={onResetJackpot}>
+          <RefreshCcw size={17} />
+          <span>Jackpot</span>
+        </button>
+        <button type="button" onClick={onResetGame}>
+          <Plus size={17} />
+          <span>Reset</span>
+        </button>
+      </div>
     </section>
   );
 }
@@ -560,7 +630,7 @@ function AdminControl({ label, settingKey, value, onChange }: AdminControlProps)
   );
 }
 
-type TarotCardProps = {
+type PlayingCardProps = {
   slot: HandSlot | null;
   held: boolean;
   index: number;
@@ -568,47 +638,41 @@ type TarotCardProps = {
   onToggle: () => void;
 };
 
-function TarotCard({ slot, held, index, disabled, onToggle }: TarotCardProps) {
+function PlayingCard({ slot, held, index, disabled, onToggle }: PlayingCardProps) {
   if (!slot) {
     return (
-      <div className="tarot-card is-empty" style={{ "--delay": `${index * 70}ms` } as CSSProperties}>
+      <div className="playing-card is-empty" style={{ "--delay": `${index * 70}ms` } as CSSProperties}>
         <div className="card-back">
-          <span>A</span>
+          <Spade size={34} fill="currentColor" aria-hidden="true" />
         </div>
       </div>
     );
   }
 
-  const meta = tarotSuitMeta[slot.card.suit];
-  const court = slot.card.rank === "J" ? "Page" : slot.card.rank === "Q" ? "Queen" : slot.card.rank === "K" ? "King" : slot.card.rank === "A" ? "Ace" : slot.card.rank;
+  const meta = standardSuitMeta[slot.card.suit];
 
   return (
     <button
-      className={`tarot-card ${held ? "is-held" : ""} ${slot.fresh ? "is-fresh" : ""}`}
-      style={{ "--suit-color": meta.accent, "--delay": `${index * 70}ms` } as CSSProperties}
+      className={`playing-card ${meta.color === "red" ? "is-red" : "is-black"} ${held ? "is-held" : ""} ${slot.fresh ? "is-fresh" : ""}`}
+      style={{ "--delay": `${index * 70}ms` } as CSSProperties}
       type="button"
       onClick={onToggle}
       disabled={disabled}
       aria-pressed={held}
       aria-label={`${held ? "Held" : "Available"} ${formatCard(slot.card)}`}
     >
-      <span className="corner top">
+      <span className="card-corner top">
         <strong>{slot.card.rank}</strong>
         <small>{meta.symbol}</small>
       </span>
-      <span className="arcana-art" aria-hidden="true">
-        <span className="moon" />
-        <span className="glyph">{meta.symbol}</span>
-        <span className="ray one" />
-        <span className="ray two" />
+      <span className="pip-art" aria-hidden="true">
+        {meta.symbol}
       </span>
-      <span className="card-title">{court}</span>
-      <span className="suit-name">{meta.title}</span>
-      <span className="corner bottom">
+      <span className="suit-label">{meta.label}</span>
+      <span className="card-corner bottom">
         <strong>{slot.card.rank}</strong>
         <small>{meta.symbol}</small>
       </span>
-      {held && <span className="hold-ribbon">Held</span>}
     </button>
   );
 }
