@@ -28,8 +28,24 @@ export type PayoutResult = {
   solverDescription: string;
 };
 
+export type AdminSettings = {
+  doubleWinRate: number;
+  progressiveHitRate: number;
+  progressiveSeed: number;
+  progressiveContributionRate: number;
+  maxDoubleRounds: number;
+};
+
 export const ranks: Rank[] = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
 export const suits: Suit[] = ["cups", "coins", "wands", "swords"];
+
+export const defaultAdminSettings: AdminSettings = {
+  doubleWinRate: 48,
+  progressiveHitRate: 7,
+  progressiveSeed: 2500,
+  progressiveContributionRate: 15,
+  maxDoubleRounds: 3,
+};
 
 export const payoutTable: Array<{ name: PayoutName; multiplier: number }> = [
   { name: "Royal Flush", multiplier: 800 },
@@ -83,11 +99,20 @@ const rankPower: Record<Rank, number> = {
 };
 
 export const tarotSuitMeta: Record<Suit, { title: string; symbol: string; accent: string; meaning: string }> = {
-  cups: { title: "Cups", symbol: "V", accent: "#cf4662", meaning: "tide" },
-  coins: { title: "Coins", symbol: "O", accent: "#d6a84e", meaning: "fortune" },
-  wands: { title: "Wands", symbol: "I", accent: "#e87945", meaning: "spark" },
-  swords: { title: "Swords", symbol: "X", accent: "#67b9d1", meaning: "edge" },
+  cups: { title: "Love", symbol: "LV", accent: "#da4cc9", meaning: "tide" },
+  coins: { title: "Angel", symbol: "AG", accent: "#d8b85b", meaning: "fortune" },
+  wands: { title: "Monk", symbol: "MK", accent: "#f08b3d", meaning: "spark" },
+  swords: { title: "Star", symbol: "ST", accent: "#5fc8ff", meaning: "edge" },
 };
+
+export const oracleFocuses = [
+  { id: "wellness", title: "Wellness", symbol: "Lotus", accent: "#32b8ff" },
+  { id: "love", title: "Love", symbol: "Heart", accent: "#d846ff" },
+  { id: "monk", title: "Monk", symbol: "Flame", accent: "#ef8a2f" },
+  { id: "yogi", title: "Yogi", symbol: "Aura", accent: "#7fbf55" },
+  { id: "angel", title: "Angel", symbol: "Wings", accent: "#7daeff" },
+  { id: "star-guide", title: "Star Guide", symbol: "Star", accent: "#e34fb1" },
+] as const;
 
 export function createDeck(): Card[] {
   return suits.flatMap((suit) =>
@@ -196,6 +221,18 @@ export function evaluateHand(cards: Card[]): PayoutResult {
   }
 
   return { name, multiplier, solverName, solverDescription };
+}
+
+export function progressiveContribution(wager: number, settings: AdminSettings): number {
+  return Math.max(1, Math.round(wager * (settings.progressiveContributionRate / 100)));
+}
+
+export function shouldHitProgressive(outcome: PayoutResult, settings: AdminSettings, random = Math.random()): boolean {
+  return outcome.name === "Jacks or Better" && random < settings.progressiveHitRate / 100;
+}
+
+export function shouldWinDouble(settings: AdminSettings, random = Math.random()): boolean {
+  return random < settings.doubleWinRate / 100;
 }
 
 export function formatCard(card: Card): string {
